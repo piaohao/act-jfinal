@@ -1,5 +1,7 @@
 package org.piaohao.act.jfinal.template;
 
+import act.Act;
+import act.app.SourceInfo;
 import com.jfinal.template.TemplateException;
 import com.jfinal.template.stat.ParseException;
 import org.osgl.$;
@@ -21,14 +23,14 @@ public class JFinalTemplateException extends act.view.TemplateException {
 
     @Override
     protected void populateSourceInfo(Throwable t) {
-//        sourceInfo = getJavaSourceInfo(t.getCause());
-//        if (t instanceof ParseException) {
-//            templateInfo = new FreeMarkerSourceInfo((ParseException) t);
-//        } else if (t instanceof freemarker.template.TemplateException) {
-//            templateInfo = new FreeMarkerSourceInfo((freemarker.template.TemplateException) t);
-//        } else {
-//            throw E.unexpected("Unknown exception type: %s", t.getClass());
-//        }
+        sourceInfo = getJavaSourceInfo(t.getCause());
+        if (t instanceof ParseException) {
+            templateInfo = new JFinalSourceInfo((ParseException) t);
+        } else if (t instanceof TemplateException) {
+            templateInfo = new JFinalSourceInfo((TemplateException) t);
+        } else {
+            throw E.unexpected("Unknown exception type: %s", t.getClass());
+        }
     }
 
     @Override
@@ -37,18 +39,7 @@ public class JFinalTemplateException extends act.view.TemplateException {
         boolean isParseException = t instanceof ParseException;
         boolean isTemplateException = t instanceof TemplateException;
         if (isParseException || isTemplateException) {
-            try {
-                Method m;
-                if (isParseException) {
-                    m = ParseException.class.getDeclaredMethod("getDescription");
-                } else {
-                    m = TemplateException.class.getDeclaredMethod("getDescription");
-                }
-                m.setAccessible(true);
-                return $.invokeVirtual(t, m);
-            } catch (NoSuchMethodException e) {
-                throw E.unexpected(e);
-            }
+            return t.getMessage();
         }
         return t.toString();
     }
@@ -66,6 +57,34 @@ public class JFinalTemplateException extends act.view.TemplateException {
     protected boolean isTemplateEngineInvokeLine(String s) {
         //return s.contains("freemarker.ext.beans.BeansWrapper.invokeMethod");
         return false;
+    }
+
+    private static class JFinalSourceInfo extends SourceInfo.Base {
+        String tag1 = "\nTemplate: \"";
+        String tag2 = "\". Line: ";
+
+        JFinalSourceInfo(ParseException e) {
+            parse(e.getMessage());
+        }
+
+        JFinalSourceInfo(TemplateException e) {
+            parse(e.getMessage());
+        }
+
+        private void parse(String message) {
+            int fileNameIndexStart = message.indexOf(tag1);
+            int rowIndexStart = message.indexOf(tag2);
+            if (fileNameIndexStart > 0 && rowIndexStart > 0) {
+                fileName = message.substring(fileNameIndexStart + tag1.length(), rowIndexStart);
+                lineNumber = Integer.parseInt(message.substring(rowIndexStart + tag2.length()));
+                lines = readTemplateSource(fileName);
+            }
+        }
+
+        private static List<String> readTemplateSource(String template) {
+            JFinalView view = (JFinalView) Act.viewManager().view(JFinalView.ID);
+            return view.loadContent(template);
+        }
     }
 
 }

@@ -5,14 +5,21 @@ import act.util.ActContext;
 import act.view.Template;
 import act.view.View;
 import com.jfinal.kit.PathKit;
+import com.jfinal.kit.StrKit;
 import com.jfinal.template.Engine;
+import com.jfinal.template.FileStringSource;
+import com.xiaoleilu.hutool.util.StrUtil;
+import org.osgl.util.C;
+import org.osgl.util.E;
+
+import java.io.IOException;
+import java.util.List;
 
 public class JFinalView extends View {
 
     public static final String ID = "jfinal";
 
     private Engine engine;
-    private String suffix;
 
     @Override
     public String name() {
@@ -21,43 +28,31 @@ public class JFinalView extends View {
 
     @Override
     protected Template loadTemplate(String resourcePath, ActContext context) {
-        com.jfinal.template.Template jfinalTemplate = engine.getTemplate(ID + resourcePath);
+        com.jfinal.template.Template jfinalTemplate = null;
+        try {
+            jfinalTemplate = engine.getTemplate(ID + resourcePath);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                if (e.getMessage().startsWith("File not found : ")) {
+                    return null;
+                }
+            }
+        }
         return new JFinalTemplate(jfinalTemplate);
     }
 
     @Override
     protected void init(final App app) {
-//        conf = new Configuration(Configuration.VERSION_2_3_23);
-//        conf.setDefaultEncoding("UTF-8");
-//        conf.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-//        conf.setClassLoaderForTemplateLoading(app.classLoader(), templateHome());
-//        suffix = app.config().get("view.freemarker.suffix");
-//        if (null == suffix) {
-//            suffix = ".ftl";
-//        } else {
-//            suffix = suffix.startsWith(".") ? suffix : S.concat(".", suffix);
-//        }
         engine = new Engine();
         engine.setBaseTemplatePath(PathKit.getRootClassPath());
     }
 
-//    public List<String> loadContent(String template) {
-//        TemplateLoader loader = conf.getTemplateLoader();
-//        try {
-//            Method lookup = TemplateCache.class.getDeclaredMethod("lookupTemplate", String.class, Locale.class, Object.class);
-//            lookup.setAccessible(true);
-//            Field cache = Configuration.class.getDeclaredField("cache");
-//            cache.setAccessible(true);
-//            TemplateLookupResult result = $.invokeVirtual(cache.get(conf), lookup, template, Locale.getDefault(), null);
-//            Method templateSource = TemplateLookupResult.class.getDeclaredMethod("getTemplateSource");
-//            templateSource.setAccessible(true);
-//            Reader reader = loader.getReader($.invokeVirtual(result, templateSource), conf.getEncoding(conf.getLocale()));
-//            return IO.readLines(reader);
-//        } catch (IOException e1) {
-//            throw E.ioException(e1);
-//        } catch (Exception e) {
-//            throw E.unexpected(e);
-//        }
-//    }
-
+    public List<String> loadContent(String template) {
+        try {
+            FileStringSource fileStringSource = new FileStringSource(engine.getBaseTemplatePath(), template, "UTF-8");
+            return StrUtil.split(fileStringSource.getContent(), '\n');
+        } catch (Exception e) {
+            throw E.unexpected(e);
+        }
+    }
 }

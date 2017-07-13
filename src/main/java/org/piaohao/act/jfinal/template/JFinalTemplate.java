@@ -4,6 +4,8 @@ import act.Act;
 import act.view.TemplateBase;
 import com.jfinal.template.FastStringWriter;
 import com.jfinal.template.Template;
+import com.jfinal.template.TemplateException;
+import com.jfinal.template.stat.ParseException;
 import org.osgl.$;
 import org.osgl.http.H;
 import org.osgl.util.E;
@@ -34,21 +36,16 @@ public class JFinalTemplate extends TemplateBase {
 
     @Override
     protected String render(Map<String, Object> renderArgs) {
-//        Writer w = new StringWriter();
-//        try {
-//            tmpl.process(renderArgs, w);
-//        } catch (ParseException e) {
-//            throw new JFinalTemplateException(e);
-//        } catch (TemplateException e) {
-//            throw new JFinalTemplateException(e);
-//        } catch (IOException e) {
-//            throw E.ioException(e);
-//        } catch (Exception e) {
-//            throw E.unexpected(e);
-//        }
-//        return w.toString();
         Writer w = new FastStringWriter();
-        tmpl.render(renderArgs, w);
+        try {
+            tmpl.render(renderArgs, w);
+        } catch (ParseException e) {
+            throw new JFinalTemplateException(e);
+        } catch (TemplateException e) {
+            throw new JFinalTemplateException(e);
+        } catch (Exception e) {
+            throw E.unexpected(e);
+        }
         return w.toString();
     }
 }
