@@ -4,11 +4,9 @@ import act.Act;
 import act.app.SourceInfo;
 import com.jfinal.template.TemplateException;
 import com.jfinal.template.stat.ParseException;
-import org.osgl.$;
 import org.osgl.util.C;
 import org.osgl.util.E;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 public class JFinalTemplateException extends act.view.TemplateException {
@@ -55,8 +53,7 @@ public class JFinalTemplateException extends act.view.TemplateException {
 
     @Override
     protected boolean isTemplateEngineInvokeLine(String s) {
-        //return s.contains("freemarker.ext.beans.BeansWrapper.invokeMethod");
-        return false;
+        return s.contains("com.jfinal.template.expr.ast.MethodInfo.invoke");
     }
 
     private static class JFinalSourceInfo extends SourceInfo.Base {
