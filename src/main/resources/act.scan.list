@@ -2,3 +2,4 @@ org.piaohao.act.jfinal.db.JFinalTransactional
 org.piaohao.act.jfinal.db.JFinalModule
 org.piaohao.act.jfinal.db.EntityFinder
 org.piaohao.act.jfinal.db.MappingKitConfigurationProcessor
+org.piaohao.act.jfinal.db.FoundMappingKitConfiguration
