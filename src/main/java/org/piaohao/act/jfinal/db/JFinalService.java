@@ -8,6 +8,8 @@ import com.alibaba.druid.filter.stat.StatFilter;
 import com.alibaba.druid.wall.WallFilter;
 import com.jfinal.plugin.activerecord.ActiveRecordPlugin;
 import com.jfinal.plugin.druid.DruidPlugin;
+import com.xiaoleilu.hutool.util.ClassUtil;
+import com.xiaoleilu.hutool.util.StrUtil;
 import org.osgl.$;
 import org.osgl.util.E;
 
@@ -15,6 +17,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.sql.DataSource;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -33,6 +36,25 @@ public final class JFinalService extends SqlDbService {
         wall.setDbType("mysql");
         dp.addFilter(wall);
         arp = new ActiveRecordPlugin(dp);
+        String mappingKitClass = config.get("mappingKitClass");
+        if (StrUtil.isNotBlank(mappingKitClass)) {
+            try {
+                Class<?> clazz = Class.forName(mappingKitClass);
+                Method[] methods = clazz.getDeclaredMethods();
+                for (Method method : methods) {
+                    if (method.getName().equals("init")) {
+                        method.invoke(null, new Object[]{arp});
+                        break;
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
         dp.start();
         arp.start();
     }
