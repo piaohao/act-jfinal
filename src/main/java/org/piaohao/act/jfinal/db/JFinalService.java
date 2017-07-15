@@ -82,8 +82,9 @@ public final class JFinalService extends SqlDbService {
     @SuppressWarnings("unchecked")
     public <DAO extends Dao> DAO defaultDao(Class<?> modelType) {
         Class<?> idType = findModelIdTypeByAnnotation(modelType, Id.class);
-        while (Object.class != modelType && null != modelType) {
-            Method[] methods = modelType.getDeclaredMethods();
+        Class<?> cls = modelType;
+        while (Object.class != cls && null != cls) {
+            Method[] methods = cls.getDeclaredMethods();
             boolean finded = false;
             for (Method method : methods) {
                 if (method.isAnnotationPresent(Id.class)) {
@@ -95,7 +96,7 @@ public final class JFinalService extends SqlDbService {
             if (finded) {
                 break;
             }
-            modelType = modelType.getSuperclass();
+            cls = cls.getSuperclass();
         }
         E.illegalArgumentIf(null == idType, "Cannot find out Dao for model type[%s]: unable to identify the ID type", modelType);
         return $.cast(new JFinalDao(idType, modelType, this));

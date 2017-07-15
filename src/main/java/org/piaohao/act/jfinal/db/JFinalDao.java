@@ -46,6 +46,7 @@ public class JFinalDao<ID_TYPE, MODEL_TYPE extends Model> extends DaoBase<ID_TYP
         init(modelType);
         this.arp(service.arp());
         this.ds = service.dataSource();
+        this.dao = $.newInstance(modelType);
     }
 
     public JFinalDao(Class<ID_TYPE> id_type, Class<MODEL_TYPE> modelType) {
