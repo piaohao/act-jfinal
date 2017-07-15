@@ -24,8 +24,7 @@ public final class JFinalService extends SqlDbService {
 
     public JFinalService(final String dbId, final App app, final Map<String, String> config) {
         super(dbId, app, config);
-        DataSourceConfig dataSourceConfig = this.config.dataSourceConfig;
-        dp = new DruidPlugin(dataSourceConfig.url, dataSourceConfig.username, dataSourceConfig.password);
+        dp = new DruidPlugin(config.get("url"), config.get("username"), config.get("password"));
         dp.setTestOnBorrow(true);
         dp.setTestWhileIdle(true);
         dp.setTestOnReturn(true);
