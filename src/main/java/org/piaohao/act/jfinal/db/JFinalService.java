@@ -1,6 +1,7 @@
 package org.piaohao.act.jfinal.db;
 
 import act.app.App;
+import act.app.event.AppEventId;
 import act.db.Dao;
 import act.db.sql.DataSourceConfig;
 import act.db.sql.SqlDbService;
@@ -40,7 +41,12 @@ public final class JFinalService extends SqlDbService {
         arp = new ActiveRecordPlugin(dp);
         mappingKitClassName = config.get("mappingKitClass");
         if (S.notBlank(mappingKitClassName)) {
-            app.eventBus().trigger(new FoundMappingKitConfiguration(this));
+            app.jobManager().on(AppEventId.PRE_START, new Runnable() {
+                @Override
+                public void run() {
+                    app.eventBus().trigger(new FoundMappingKitConfiguration( JFinalService.this));
+                }
+            });
         } else {
             start();
         }
