@@ -15,24 +15,17 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.sql.DataSource;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 public final class JFinalService extends SqlDbService {
     private ActiveRecordPlugin arp;
+    private DruidPlugin dp;
 
     public JFinalService(final String dbId, final App app, final Map<String, String> config) {
         super(dbId, app, config);
-    }
-
-    @Override
-    protected boolean supportDdl() {
-        return true;
-    }
-
-    @Override
-    protected DataSource createDataSource() {
-        DataSourceConfig dataSourceConfig = config.dataSourceConfig;
-        DruidPlugin dp = new DruidPlugin(dataSourceConfig.url, dataSourceConfig.username, dataSourceConfig.password);
+        DataSourceConfig dataSourceConfig = this.config.dataSourceConfig;
+        dp = new DruidPlugin(dataSourceConfig.url, dataSourceConfig.username, dataSourceConfig.password);
         dp.setTestOnBorrow(true);
         dp.setTestWhileIdle(true);
         dp.setTestOnReturn(true);
@@ -43,6 +36,15 @@ public final class JFinalService extends SqlDbService {
         arp = new ActiveRecordPlugin(dp);
         dp.start();
         arp.start();
+    }
+
+    @Override
+    protected boolean supportDdl() {
+        return true;
+    }
+
+    @Override
+    protected DataSource createDataSource() {
         return dp.getDataSource();
     }
 
@@ -57,6 +59,21 @@ public final class JFinalService extends SqlDbService {
     @SuppressWarnings("unchecked")
     public <DAO extends Dao> DAO defaultDao(Class<?> modelType) {
         Class<?> idType = findModelIdTypeByAnnotation(modelType, Id.class);
+        while (Object.class != modelType && null != modelType) {
+            Method[] methods = modelType.getDeclaredMethods();
+            boolean finded = false;
+            for (Method method : methods) {
+                if (method.isAnnotationPresent(Id.class)) {
+                    idType = method.getReturnType();
+                    finded = true;
+                    break;
+                }
+            }
+            if (finded) {
+                break;
+            }
+            modelType = modelType.getSuperclass();
+        }
         E.illegalArgumentIf(null == idType, "Cannot find out Dao for model type[%s]: unable to identify the ID type", modelType);
         return $.cast(new JFinalDao(idType, modelType, this));
     }
