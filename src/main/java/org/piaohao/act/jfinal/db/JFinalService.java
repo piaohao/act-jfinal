@@ -5,6 +5,7 @@ import act.app.event.AppEventId;
 import act.db.Dao;
 import act.db.sql.DataSourceConfig;
 import act.db.sql.SqlDbService;
+import act.event.ActEvent;
 import com.alibaba.druid.filter.stat.StatFilter;
 import com.alibaba.druid.wall.WallFilter;
 import com.jfinal.plugin.activerecord.ActiveRecordPlugin;
@@ -41,10 +42,13 @@ public final class JFinalService extends SqlDbService {
         arp = new ActiveRecordPlugin(dp);
         mappingKitClassName = config.get("mappingKitClass");
         if (S.notBlank(mappingKitClassName)) {
-            app.jobManager().on(AppEventId.PRE_START, new Runnable() {
+            app.jobManager().on(AppEventId.POST_START, new Runnable() {
                 @Override
                 public void run() {
-                    app.eventBus().trigger(new FoundMappingKitConfiguration( JFinalService.this));
+                    Class<?> cls = $.classForName("org.piaohao.act.jfinal.db.FoundMappingKitConfiguration", app.classLoader());
+                    Object o = $.newInstance(cls, JFinalService.this);
+                    ActEvent event = $.cast(o);
+                    app.eventBus().trigger(event);
                 }
             });
         } else {
