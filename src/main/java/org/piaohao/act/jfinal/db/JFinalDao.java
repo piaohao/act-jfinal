@@ -9,6 +9,7 @@ import act.util.General;
 import com.jfinal.plugin.activerecord.ActiveRecordPlugin;
 import com.jfinal.plugin.activerecord.Db;
 import com.jfinal.plugin.activerecord.Model;
+import com.jfinal.plugin.activerecord.Table;
 import org.osgl.$;
 import org.osgl.logging.L;
 import org.osgl.logging.Logger;
@@ -60,7 +61,14 @@ public class JFinalDao<ID_TYPE, MODEL_TYPE extends Model> extends DaoBase<ID_TYP
 
     public void arp(ActiveRecordPlugin arp) {
         this.arp = $.notNull(arp);
-        this.tableName = arp.getTableMap().get(modelType()).getName();
+        this.tableName = tableName(modelType());
+    }
+
+    public Model<MODEL_TYPE> dao() {
+        if (dao == null) {
+            return $.newInstance(modelType());
+        }
+        return dao;
     }
 
     public void modelType(Class<?> type) {
@@ -84,7 +92,7 @@ public class JFinalDao<ID_TYPE, MODEL_TYPE extends Model> extends DaoBase<ID_TYP
             }
         }
         if (null != arp) {
-            this.tableName = arp.getTableMap().get(modelType).getName();
+            this.tableName = tableName(modelType);
         }
     }
 
@@ -109,6 +117,39 @@ public class JFinalDao<ID_TYPE, MODEL_TYPE extends Model> extends DaoBase<ID_TYP
             }
         }
         return arp;
+    }
+
+    private List<Table> tableList() {
+        try {
+            Field f = arp().getClass().getDeclaredField("tableList");
+            f.setAccessible(true);
+            return (List<Table>) f.get(arp);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private String tableName(Class<MODEL_TYPE> modelType) {
+        List<Table> tableList = tableList();
+        for (Table table : tableList) {
+            if (table.getModelClass().getName().equals(modelType.getName())) {
+                return table.getName();
+            }
+        }
+        return null;
+    }
+
+    private String primaryKey(MODEL_TYPE modelType) {
+        List<Table> tableList = tableList();
+        for (Table table : tableList) {
+            if (table.getModelClass().getName().equals(modelType.getClass().getName())) {
+                return table.getPrimaryKey()[0];
+            }
+        }
+        return null;
     }
 
     public DataSource ds() {
@@ -181,7 +222,7 @@ public class JFinalDao<ID_TYPE, MODEL_TYPE extends Model> extends DaoBase<ID_TYP
     @Override
     public ID_TYPE getId(MODEL_TYPE entity) {
         if (entity instanceof Model) {
-            return (ID_TYPE) arp().getTableMap().get(entity.getClass()).getPrimaryKey()[0];
+            return (ID_TYPE) primaryKey(entity);
         } else if (null != idField) {
             try {
                 return (ID_TYPE) idField.get(entity);
